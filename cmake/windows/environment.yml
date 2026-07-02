@@ -1,8 +1,6 @@
 name: trids
 channels:
   - nvidia/label/cuda-12.6.0
-  - pytorch
-  - nvidia
   - conda-forge
 
 # Note: The version of PyTorch must be compatible with CUDA

@@ -19,14 +19,15 @@ import sys
 import time
 import argparse
 from pathlib import Path
+import torch
 
 # Parse command line arguments
 parser = argparse.ArgumentParser(description="TRIDS Python API Test Script")
 parser.add_argument(
     "-g", "--gpu",
     type=int,
-    default=0,
-    help="Device to run tests on (default: 0, CPU: -1)."
+    default=(0 if torch.cuda.is_available() else -1),
+    help="Device to run tests on (default: GPU: 0, CPU: -1)."
 )
 args = parser.parse_args()
 
@@ -122,9 +123,7 @@ except Exception as e:
 # ==================== 3. Test Coordinate Operations ====================
 print("\n[4] Testing coordinate operations...")
 
-try:
-    import torch
-    
+try:   
     coords = ligand_ref.coordinates
     print(f"    [DONE] Coordinates retrieved successfully: shape = {coords.shape}")
     print(f"    [DONE] Coordinate range: x=[{coords[:, 0].min():.2f}, {coords[:, 0].max():.2f}], "

@@ -145,7 +145,7 @@ or
 
 * If **trids** could not be ran normally, please check if adding **PATH** to environment variables:
 
-      > set PATH=%CONDA_PREFIX%\Lib\site-packages\torch\lib;%CONDA_PREFIX%\Library\bin;%PATH%
+      > set PATH=%CONDA_PREFIX%\Lib\site-packages\torch\lib;%CONDA_PREFIX%\Library\bin;%CONDA_PREFIX%\Library\lib;%PATH%
 
 ### 4. Installation of **PyTrids** for Python
 
