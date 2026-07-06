@@ -129,7 +129,7 @@ Run the following code in the command line of PyMOL
 * If python outputs the correct information, installation has been done. Here, **-g** denotes the CUDA id.
 
 ## Compilation (Optional)
-#### 1. General dependencies 
+### 1. General dependencies 
 The following packages need to be installed manually **only if** this project is recompiled:
 * [cmake](https://cmake.org) (version >= 3.18, < 4.0)
 
