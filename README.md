@@ -52,7 +52,7 @@ After creation, activating the Conda environment **trids**:
 
       conda activate trids
 
-#### 1.1 Dependencies at runtime (Required)
+#### 1.1 Dependencies required at runtime
 After the environment being created, these required packages at runtime have been installed automatically. Usually, you had better to check if they has been installed:
 * [PyTorch](https://www.pytorch.org) (version >= 2.6)
 
@@ -65,7 +65,71 @@ After the environment being created, these required packages at runtime have bee
 * [pybind11](https://github.com/pybind/pybind11) (version >= 2.11, Optional)
 **Note**: Pybind11 is required only when you want to install **PyTrids** for Python.
 
-#### 1.2 Dependencies for compilation (Optional) 
+### 2. Installing **PyTrids** for Python
+
+      python setup.py install
+
+or 
+
+      pip install -e . --no-build-isolation
+
+**Note:** If you want to uninstall this package, run:
+
+      pip uninstall trids
+
+### 3. Installing of PyMOL plugin (Optional)
+First of all, make sure that **PyTrids** and **PyMOL** has been installed in the same **Conda** environment
+      
+      conda install pymol-open-source -c conda-forge
+
+**Method 1**: (Recommended)
+* Run PyMOL
+* Menu: Plugin -> Plugin Manager -> Install New Plugin -> Choose File ...
+* Choose: ~/plugins/pymol/trids_gui.py
+* Restart PyMOL
+* If installation is complete, the menu in plugin has "TRIDS Settings"
+
+**Method 2**: (Manual)
+Copy trids_gui.py into the startup folder of PyMOL.
+On Linux:
+      cp plugins/pymol/trids_gui.py ~/.pymol/startup/
+
+or on windows:
+
+      copy plugins/pymol/trids_gui.py C:\Users\<Username>\.pymol\startup\
+
+**Method 3**: (Temporary) 
+Run the following code in the command line of PyMOL
+
+      run ~/plugins/pymol/trids_gui.py
+
+
+### 4. Installation Check
+#### 4.1 Check main program with CLI:
+
+      trids -h
+
+#### 4.2 Check **PyTrids**
+
+ on GPU:
+
+      python tests/test_trids.py -g 0
+
+ on CPU:
+
+      python tests/test_trids.py -g -1
+
+#### Check **PyMOL** plugin
+
+      python tests/test_pymol.py
+
+
+**Note:** 
+* If usage instruction outputs after running **trids -h**, it has been installed successfully.
+* If python outputs the correct information, installation has been done. Here, **-g** denotes the CUDA id.
+
+## Compilation (Optional)
+#### 1. General dependencies 
 The following packages need to be installed manually **only if** this project is recompiled:
 * [cmake](https://cmake.org) (version >= 3.18, < 4.0)
 
@@ -83,8 +147,8 @@ The following packages need to be installed manually **only if** this project is
 
 **Note**: The version of PyTorch should be consistent with the version of CUDA. 
 
-### 2. Compilation on **Linux**
-#### 2.1 Dependencies
+### 2. **Linux**
+#### 2.1 Specific dependencies
 If installed CUDA version == 11.8, and default GCC version >= 12, the following package must be installed as C++ compiler.
 * [GCC](https://gcc.gnu.org/) (version <= 11.2, Optional). 
 
@@ -116,8 +180,8 @@ If installed CUDA version == 11.8, and default GCC version >= 12, the following 
 * **-DCMAKE_INSTALL_PREFIX** is folder path for installation, please replace **<path/for/trids>** with appropriate location; default is **/usr/local**
 * **-j 8** means that the code will be compiled with **eight** CPU cores, this number could be set manually based on your own device.
 
-### 3. Compilation on **Windows**
-#### 3.1 Dependencies
+### 3. **Windows**
+#### 3.1 Specific dependencies
 * [Microsoft Visual C++ Build Tools](https://visualstudio.microsoft.com/zh-hans/) 
 
 * [Ninja](https://ninja-build.org/) (version >= 1.0.0)
@@ -136,69 +200,6 @@ If installed CUDA version == 11.8, and default GCC version >= 12, the following 
 Then, adding **PATH** to environment variables:
 
       set PATH=%CONDA_PREFIX%\Lib\site-packages\torch\lib;%CONDA_PREFIX%\Library\bin;%CONDA_PREFIX%\Library\lib;%PATH%
-
-### 4. Installing **PyTrids** for Python
-
-      python setup.py install
-
-or 
-
-      pip install -e . --no-build-isolation
-
-**Note:** If you want to uninstall this package, run:
-
-      pip uninstall trids
-
-### 5. Installing of PyMOL plugin (After Step 4)
-First of all, make sure that **PyTrids** and **PyMOL** has been installed in the same **Conda** environment
-      
-      conda install pymol-open-source -c conda-forge
-
-**Method 1**: (Recommended)
-* Run PyMOL
-* Menu: Plugin -> Plugin Manager -> Install New Plugin -> Choose File ...
-* Choose: ~/plugins/pymol/trids_gui.py
-* Restart PyMOL
-* If installation is complete, the menu in plugin has "TRIDS Settings"
-
-**Method 2**: (Manual)
-Copy trids_gui.py into the startup folder of PyMOL.
-On Linux:
-      cp plugins/pymol/trids_gui.py ~/.pymol/startup/
-
-or on windows:
-
-      copy plugins/pymol/trids_gui.py C:\Users\<Username>\.pymol\startup\
-
-**Method 3**: (Temporary) 
-Run the following code in the command line of PyMOL
-
-      run ~/plugins/pymol/trids_gui.py
-
-
-### 6. Installation Check
-#### 6.1 Check main program with CLI:
-
-      trids -h
-
-#### 6.2 Check **PyTrids**
-
- on GPU:
-
-      python tests/test_trids.py -g 0
-
- on CPU:
-
-      python tests/test_trids.py -g -1
-
-#### Check **PyMOL** plugin
-
-      python tests/test_pymol.py
-
-
-**Note:** 
-* If usage instruction outputs after running **trids -h**, it has been installed successfully.
-* If python outputs the correct information, installation has been done. Here, **-g** denotes the CUDA id.
 
 ## Usage
 ### 1. Usage of standalone version: 
