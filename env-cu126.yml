@@ -8,14 +8,15 @@ channels:
 dependencies:
   - python=3.12
   - openbabel>=3.1.1
-  - pybind11>=2.13
   - spdlog>=1.16.0
   - cli11>=2.1.2
+  - pybind11>=2.13
   - numpy>=2.0
-  # If you want to compile this project on Windows, followig packages should be installed, 
+  # If you want to compile this project on local machine, followig packages should be installed, 
   # and the version of PyTorch must be compatible with CUDA
-  # - cmake=3.28
+  # - cmake=3.22
   # - cuda=12.6
+  # Only for Windows
   # - ninja
   # - vs2022-win_64
   # - zlib
@@ -23,5 +24,6 @@ dependencies:
   - pip:
     - --extra-index-url https://download.pytorch.org/whl/cu126
     - torch==2.7.1
+    # Only for Windows
     - nvidia-nvtx-cu12
     - nvidia-cudnn-cu12

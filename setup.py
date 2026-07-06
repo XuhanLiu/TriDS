@@ -32,6 +32,7 @@ from setuptools.command.develop import develop
 from setuptools.command.editable_wheel import editable_wheel
 from setuptools.command.install import install
 from setuptools.command.install_lib import install_lib
+import torch
 
 VERSION = "1.0.0"
 SOURCE_DIR = Path(__file__).parent.resolve()
@@ -136,39 +137,18 @@ def _copy_glob(source: Path, dest_dir: Path, patterns: tuple[str, ...]) -> list[
 
 
 def find_prebuilt_bin_dir(source_dir: Path) -> Path:
-    if IS_WINDOWS:
-        win_root = source_dir / "bin" / "windows"
-        if not win_root.is_dir():
-            return None
-        candidates = [win_root, *sorted(win_root.rglob("*"), key=lambda path: len(path.parts))]
-        for candidate in candidates:
-            if candidate.is_dir() and _artifacts_complete(candidate):
-                return _artifact_dir(candidate)
+    platform = source_dir / "bin" / ("windows" if IS_WINDOWS else "linux")
+    if not platform.is_dir():
         return None
 
-    linux_root = source_dir / "bin" / "linux"
-    if not linux_root.is_dir():
+    match = re.match(r"(\d+)\.(\d+)", (torch.version.cuda or "").strip())
+    if not match:
         return None
 
-    candidates: list[Path] = []
-    try:
-        import torch
-
-        match = re.match(r"(\d+)\.(\d+)", (torch.version.cuda or "").strip())
-        if match:
-            candidates.append(linux_root / f"cu{match.group(1)}{match.group(2)}")
-    except Exception:
-        pass
-    candidates.extend(sorted(linux_root.glob("cu*"), key=lambda path: path.name, reverse=True))
-
-    for candidate in dict.fromkeys(candidates):
-        if _artifacts_complete(candidate):
-            return candidate
-    return None
-
-
-def get_artifact_dir(source_dir: Path) -> Path:
-    return find_prebuilt_bin_dir(source_dir) or _artifact_dir(get_build_dir(source_dir))
+    prebuilt = platform / f"cu{match.group(1)}{match.group(2)}"
+    if not prebuilt.is_dir() or not _artifacts_complete(prebuilt):
+        return None
+    return prebuilt
 
 
 def _find_core_module(prebuilt: Path, build_dir: Path) -> Path:
@@ -182,30 +162,33 @@ def _find_core_module(prebuilt: Path, build_dir: Path) -> Path:
     return None
 
 
-def _patch_elf_rpath(binary: Path, rpath: str) -> bool:
-    patchelf = shutil.which("patchelf")
-    if not patchelf:
-        return False
-    return subprocess.run(
-        [patchelf, "--set-rpath", rpath, str(binary)],
-        capture_output=True,
-        text=True,
-    ).returncode == 0
-
-
-def _create_windows_launcher(wrapper: Path, real_binary: Path) -> None:
-    """Write a .bat launcher that avoids llvm-openmp DLL clashes in Library/bin."""
-    base = _env_base()
-    torch_lib = base / "Lib" / "site-packages" / "torch" / "lib"
-    bin_dir = get_bin_install_dir()
-    wrapper.parent.mkdir(parents=True, exist_ok=True)
-    wrapper.write_text(
-        "@echo off\r\n"
-        f'set "PATH={torch_lib};{bin_dir};%PATH%"\r\n'
-        "set \"KMP_DUPLICATE_LIB_OK=TRUE\"\r\n"
-        f'"{real_binary}" %*\r\n',
-        encoding="utf-8",
-    )
+def _create_launcher(wrapper: Path, real_binary: Path, lib_dest: Path) -> None:
+    if IS_WINDOWS:
+        """Write a .bat launcher that avoids llvm-openmp DLL clashes in Library/bin."""
+        base = _env_base()
+        torch_lib = base / "Lib" / "site-packages" / "torch" / "lib"
+        bin_dir = get_bin_install_dir()
+        wrapper.parent.mkdir(parents=True, exist_ok=True)
+        wrapper.write_text(
+            "@echo off\r\n"
+            f'set "PATH={torch_lib};{bin_dir};%PATH%"\r\n'
+            f'"{real_binary}" %*\r\n',
+            encoding="utf-8",
+        )
+    else:
+        base = _env_base()
+        torch_lib = Path(torch.__file__).resolve().parent / "lib"
+        conda_lib = base / "lib"
+        wrapper.parent.mkdir(parents=True, exist_ok=True)
+        wrapper.write_text(
+            "#!/bin/sh\n"
+            f'LIBDIR="{lib_dest}"\n'
+            f'TORCH_LIB="{torch_lib}"\n'
+            f'CONDA_LIB="{conda_lib}"\n'
+            'export LD_LIBRARY_PATH="$TORCH_LIB:$CONDA_LIB:$LIBDIR${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"\n'
+            f'exec "{real_binary}" "$@"\n'
+        )
+        wrapper.chmod(0o755)
 
 
 def install_lib_to_env(source_dir: Path, artifact_dir: Path) -> list[str]:
@@ -221,12 +204,9 @@ def install_lib_to_env(source_dir: Path, artifact_dir: Path) -> list[str]:
         sys.exit(f"Error: Artifact directory not found: {artifact_dir}")
 
     installed = _copy_glob(lib_source, lib_dest, ("*.pt",))
-    patterns = ("*.pyd", "*.dll") if IS_WINDOWS else ("*.so",)
+    native_patterns = ("*.pyd", "*.dll") if IS_WINDOWS else ("*.so",)
     for src_dir in _artifact_search_dirs(artifact_dir):
-        for pattern in patterns:
-            for src_file in src_dir.glob(pattern):
-                dest_name = src_file.name
-                installed.append(_copy_file(src_file, lib_dest / dest_name))
+        installed.extend(_copy_glob(src_dir, lib_dest, native_patterns))
 
     print(f"Lib files installed to: {lib_dest}")
     return installed
@@ -239,48 +219,20 @@ def install_bin_to_env(artifact_dir: Path) -> list[str]:
     if trids_exe is None:
         sys.exit(f"Error: {exe_name} not found in {artifact_dir}")
 
-    if IS_WINDOWS:
-        lib_dest = get_lib_install_dir()
-        bin_dest = get_bin_install_dir()
-        print(f"Installing trids executable to {lib_dest}")
-        real_binary = lib_dest / exe_name
-        installed = [_copy_file(trids_exe, real_binary)]
-
-        wrapper = bin_dest / "trids.bat"
-        print(f"Installing trids launcher to {wrapper}")
-        _create_windows_launcher(wrapper, real_binary)
-        installed.append(str(wrapper))
-        print(f"Executable installed to: {wrapper}")
-        return installed
-
     lib_dest = get_lib_install_dir()
     bin_dest = get_bin_install_dir()
+    real_binary = lib_dest / exe_name
     print(f"Installing trids executable to {lib_dest}")
-    real_binary = lib_dest / "trids"
-    _copy_file(trids_exe, real_binary)
-    real_binary.chmod(0o755)
+    installed = [_copy_file(trids_exe, real_binary)]
+    if not IS_WINDOWS:
+        real_binary.chmod(0o755)
 
-    try:
-        import torch
-
-        rpath = f"$ORIGIN:{Path(torch.__file__).resolve().parent / 'lib'}"
-    except Exception:
-        rpath = "$ORIGIN"
-    if not _patch_elf_rpath(real_binary, rpath):
-        print("  Note: patchelf not found; bin/trids wrapper will set LD_LIBRARY_PATH")
-
-    wrapper = bin_dest / "trids"
+    wrapper = bin_dest / ("trids.bat" if IS_WINDOWS else "trids")
     print(f"Installing trids launcher to {wrapper}")
-    wrapper.parent.mkdir(parents=True, exist_ok=True)
-    wrapper.write_text(
-        "#!/bin/sh\n"
-        f'LIBDIR="{lib_dest}"\n'
-        'export LD_LIBRARY_PATH="$LIBDIR${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"\n'
-        'exec "$LIBDIR/trids" "$@"\n'
-    )
-    wrapper.chmod(0o755)
+    _create_launcher(wrapper, real_binary, lib_dest)
+    installed.append(str(wrapper))
     print(f"Executable installed to: {wrapper}")
-    return [str(real_binary), str(wrapper)]
+    return installed
 
 
 def install_include_to_env(source_dir: Path) -> list[str]:
@@ -525,13 +477,17 @@ def build_cpp_extension(source_dir: Path, build_dir: Path, force_rebuild: bool =
         build_dir.mkdir(parents=True, exist_ok=True)
 
     cmake_cache = build_dir / "CMakeCache.txt"
-    build_env = None
+    if IS_WINDOWS:
+        if not os.environ.get("CONDA_PREFIX"):
+            raise RuntimeError("CONDA_PREFIX is not set. Activate your conda env before installing.")
+        build_env = _windows_build_env()
+    else:
+        build_env = os.environ.copy()
+        build_env["Python_EXECUTABLE"] = sys.executable
+
     if not cmake_cache.exists():
         print(f"\n[1/2] Configuring CMake in {build_dir}...")
         if IS_WINDOWS:
-            if not os.environ.get("CONDA_PREFIX"):
-                raise RuntimeError("CONDA_PREFIX is not set. Activate your conda env before installing.")
-            build_env = _windows_build_env()
             cmake_args = [
                 "cmake", str(source_dir / "cmake" / "windows"),
                 "-G", "Ninja", "-DCMAKE_BUILD_TYPE=Release", "-DBUILD_PYTHON=ON",
@@ -540,14 +496,10 @@ def build_cpp_extension(source_dir: Path, build_dir: Path, force_rebuild: bool =
             if ninja.is_file():
                 cmake_args.append(f"-DCMAKE_MAKE_PROGRAM={ninja}")
         else:
-            build_env = os.environ.copy()
-            build_env["Python_EXECUTABLE"] = sys.executable
             cmake_args = ["cmake", str(source_dir / "cmake" / "linux"), "-DBUILD_PYTHON=ON"]
         _run(cmake_args, build_dir, build_env)
     else:
         print(f"\n[1/2] Using existing CMake configuration in {build_dir}")
-        if IS_WINDOWS:
-            build_env = _windows_build_env()
 
     print("\n[2/2] Building with 8 parallel jobs...")
     build_cmd = [
@@ -616,12 +568,14 @@ def ensure_trids_assets_installed() -> list[str]:
         _trids_asset_outputs = []
         return _trids_asset_outputs
     else:
-        artifact_dir = get_artifact_dir(SOURCE_DIR)
+        artifact_dir = _artifact_dir(get_build_dir(SOURCE_DIR))
 
     if not _artifacts_complete(artifact_dir):
         print(f"Error: Incomplete TRIDS artifacts in {artifact_dir}")
         if IS_WINDOWS:
-            print("Expected under build/ or bin/windows/: trids.exe, trids.dll, _core*.pyd")
+            print("Expected under build/ or bin/windows/cuXXX/: trids.exe, trids.dll, _core*.pyd")
+        else:
+            print("Expected under build/ or bin/linux/cuXXX/: trids, libtrids.so, _core*.so")
         _trids_asset_outputs = []
         return _trids_asset_outputs
 

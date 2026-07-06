@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.22)
+cmake_minimum_required(VERSION 3.18)
 set(TRIDS_VERSION "1.0.0")
 # ==================== Conda toolchain (must run before project()) ====================
 # - Prefer nvcc from the active env over /usr/local/cuda on PATH
@@ -32,6 +32,7 @@ project(trids LANGUAGES CXX CUDA)
 # libtorch requires at leat C++17
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CUDA_STANDARD 17)
+set(CMAKE_CUDA_ARCHITECTURES all)
 
 # Include GNUInstallDirs to use standard path variables like CMAKE_INSTALL_BINDIR/LIBDIR/INCLUDEDIR
 include(GNUInstallDirs)
@@ -126,6 +127,11 @@ target_link_libraries(libtrids
 add_executable(trids_exe "${TRIDS_ROOT}/main.cpp")
 set_target_properties(trids_exe PROPERTIES OUTPUT_NAME trids)
 target_link_libraries(trids_exe libtrids CLI11::CLI11)
+
+set_target_properties(trids_exe libtrids PROPERTIES
+    BUILD_WITH_INSTALL_RPATH TRUE
+    INSTALL_RPATH "${TRIDS_INSTALL_RPATH}"
+)
 
 install(TARGETS trids_exe libtrids
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}

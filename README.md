@@ -13,7 +13,7 @@ Please see the LICENSE file for the license terms for the software. Basically it
 
 ## Introduction
 <p align=justify>
-Molecular docking is a cornerstone of drug discovery for unveiling the mechanism of ligand-receptor interactions. With the recent advances of deep learning (DL), AI-powered molecular docking methods have achieved higher accuracy for binding pose prediction and virtual screening compared with classical physics-based methods. However, there is still a scarcity of approaches to strike a balance among accuracy, computational efficiency, and rigorous physical validity of the output conformations. In the previous two versions of DSDP, we demonstrated the effectiveness of guiding conformation sampling with the gradient of an analytic scoring function. As the third version, TRIDS was devised as an AI-native docking framework that expand the similar strategy to unify conformation sampling and docking processes with DL-based model for improving accuracy of docking and screening. Furthermore, it is tailored for seamless cooperation of AI and physics to guarantee the physical validity of predicted binding poses. Being user-friendly, TRIDS predicts the binding site, parses multiple file formats, and supports Python programming and PyMOL graphical interaction. It improves docking accuracy and passes physical validation with high computational efficiency, i.e. a single docking task is done in a fraction of second while maintaining a highly lightweight GPU memory footprint of merely hundreds of megabytes, facilitating high-throughput virtual screening in reality. As a proof of concept, TRIDS allowed us to obtain hit compounds with novel scaffolds for tumor necrosis factor-alpha (TNFα) inhibitor through a large-scale virtual screening. 
+Molecular docking is a cornerstone of drug discovery for unveiling the mechanism of ligand-receptor interactions. With the recent advances of deep learning (DL), AI-powered molecular docking methods have achieved higher accuracy for binding pose prediction and virtual screening compared with classical physics-based methods. However, there is still a scarcity of approaches to strike a balance among accuracy, computational efficiency, and rigorous physical validity of the output conformations. In the previous two versions of DSDP, we demonstrated the effectiveness of guiding conformation sampling with the gradient of an analytic scoring function. As the third version, TRIDS is devised as an AI-native docking framework that expand the similar strategy to unify conformation sampling and docking processes with DL-based model for improving accuracy of docking and screening. Furthermore, it is tailored for seamless cooperation of AI and physics to guarantee the physical validity of predicted binding poses. Being user-friendly, TRIDS predicts the binding site, parses multiple file formats, and supports Python programming and PyMOL graphical interaction. It improves docking accuracy and passes physical validation with high computational efficiency, i.e. a single docking task is done in a fraction of second while maintaining a highly lightweight GPU memory footprint of merely hundreds of megabytes, facilitating high-throughput virtual screening in reality. As a proof of concept, TRIDS allowed us to obtain hit compounds with novel scaffolds for tumor necrosis factor-alpha (TNFα) inhibitor through a large-scale virtual screening. 
 </p>
 
 ## Architectures
@@ -38,211 +38,189 @@ The sampling space is defined on the degrees of freedom for each molecule, inclu
 ## Installation
 To run the compiled **TRIDS**, some dependent packages need to be installed. You could create an new **Conda** environment with these required packages: 
 
-### 1. Creation of a new Conda environment (trids) 
+### 1. Creating a new Conda environment (trids)
 
-For **Linux**:
+For CUDA-12.6:
 
-      $ conda env create -f cmake/linux/env-cu126.yml             # CUDA 12.6
+      conda env create -f env-cu126.yml
 
-or 
+or CUDA-11.8:
 
-      $ conda env create -f cmake/linux/env-cu118.yml             # CUDA 11.8
+      conda env create -f env-cu118.yml
 
-For **Windows**:
+After creation, activating the Conda environment **trids**:
 
-      $ conda env create -f cmake/windows/environment.yml         # CUDA 12.6
+      conda activate trids
 
-After installation, activating the Conda environment **trids**:
+#### 1.1 Dependencies at runtime (Required)
+After the environment being created, these required packages at runtime have been installed automatically. Usually, you had better to check if they has been installed:
+* [PyTorch](https://www.pytorch.org) (version >= 2.6)
 
-      $ conda activate trids
+* [OpenBabel](https://openbabel.org) (version >= 3.1.1)
 
-**Note:** 
-* After this environment is created, all of packages required at runtime will be installed automatically.
-* Make sure all of the dependencies have been installed. Otherwise, you have to install them manually.
-* If you want to compile this project on local machine, make sure the additive packages (e.g. **cmake** and **CUDA**) have also been installed. 
+* [CLI11](https://github.com/CLIUtils/CLI11) (version >= 2.0)
 
-#### The following packages are required at runtime: 
-#### 1.1. [PyTorch](https://www.pytorch.org) (version >= 2.6)
+* [spdlog](https://github.com/gabime/spdlog) (version >= 1.0)
 
-      $ pip install pytorch==2.7.1 --index-url https://download.pytorch.org/whl/cu126     # CUDA 12.6
-
-or
-
-      $ pip install pytorch==2.7.1 --index-url https://download.pytorch.org/whl/cu118     # CUDA 11.8
-
-#### 1.2. [OpenBabel](https://openbabel.org) (version >= 3.1.1)
-
-      $ conda install openbabel==3.1.1 -c conda-forge
-
-#### 1.3. [CLI11](https://github.com/CLIUtils/CLI11) (version >= 2.0)
-
-      $ conda install cli11==2.1.2
-
-#### 1.4. [spdlog](https://github.com/gabime/spdlog) (version >= 1.0)
-
-      # conda install spdlog==1.16.0
-
-#### 1.5. [pybind11](https://github.com/pybind/pybind11) (version >= 2.11, Optional)
-
-      $ conda install pybind11==2.11 -c conda-forge
-
+* [pybind11](https://github.com/pybind/pybind11) (version >= 2.11, Optional)
 **Note**: Pybind11 is required only when you want to install **PyTrids** for Python.
 
-#### 1.6 [PyMOL](https://www.pymol.org/) (version >= 2.5, Optional)
+#### 1.2 Dependencies for compilation (Optional) 
+The following packages need to be installed manually **only if** this project is recompiled:
+* [cmake](https://cmake.org) (version >= 3.18, < 4.0)
 
-      $ conda install pymol-open-source -c conda-forge
+      conda install cmake==3.22 -c conda-forge
 
-**Note**: If you want to use PyMOL plugins, make sure that PyMOL and TRIDS have been installed in the same Conda environment.
+* [Nvidia CUDA](https://developer.nvidia.com/cuda) (version >= 11.8)
 
-#### The following packages are also required if this project is recompiled manually:
-#### 1.7. [cmake](https://cmake.org) (version >= 3.18, < 4.0)
+  version == 11.8:
 
-      $ conda install cmake==3.22 -c conda-forge
+      conda install cuda==11.8.0 -c nvidia/label/cuda-11.8.0
 
-#### 1.8. [Nvidia CUDA](https://developer.nvidia.com/cuda) (version >= 11.8)
-
-      $ conda install cuda==11.8.0 -c nvidia/label/cuda-11.8.0
-
-or 
-
-      $ conda install cuda==12.6.0 -c nvidia/label/cuda-12.6.0
+  or version == 12.6:
+      
+      conda install cuda==12.6.0 -c nvidia/label/cuda-12.6.0
 
 **Note**: The version of PyTorch should be consistent with the version of CUDA. 
 
-#### 1.9. [GCC](https://gcc.gnu.org/) (version <= 11.2, Optional)
+### 2. Compilation on **Linux**
+#### 2.1 Dependencies
+If installed CUDA version == 11.8, and default GCC version >= 12, the following package must be installed as C++ compiler.
+* [GCC](https://gcc.gnu.org/) (version <= 11.2, Optional). 
 
-      $ conda install gcc_linux-64==11.2 gxx_linux-64==11.2
+      conda install gcc_linux-64==11.2 gxx_linux-64==11.2
 
-**Note**: If your CUDA version is 11.8, and default GCC version >= 12, this GCC is required to be installed as C++ compiler.
+#### 2.2 Compilation & Installation 
+* Creating an empty folder for compilation:
 
-### 2. Installation of standalone version on **Linux**
+      mkdir build && cd build
 
-      $ mkdir build && cd build
+* CMake configuration 
 
-      $ cmake ../cmake/linux -DCMAKE_INSTALL_PREFIX=<path/for/trids> -DBUILD_PYTHON=ON
+      cmake ../cmake/linux -DCMAKE_INSTALL_PREFIX=<path/for/trids> -DBUILD_PYTHON=ON
 
-      $ make install -j 8
+* Compilation & Istallation
 
-      $ export PATH=$PATH:<path/for/trids>/bin
+      make install -j 8
+
+* Add **PATH** to environmental variables:
+
+      export PATH=$PATH:<path/for/trids>/bin
+
+* Add **LD_LIBRARY_PATH** to environmental variables:
+
+      export LD_LIBRARY_PATH=$CONDA_PREFIX/lib/python3.12/site-packages/torch/lib:$CONDA_PREFIX/lib:$LD_LIBRARY_PATH
 
 **Note:** 
 * **-DBUILD_PYTHON** for **cmake** should be **ON**, if the **PyTrids** will be installed later manually; default is **OFF**;
 * **-DCMAKE_INSTALL_PREFIX** is folder path for installation, please replace **<path/for/trids>** with appropriate location; default is **/usr/local**
 * **-j 8** means that the code will be compiled with **eight** CPU cores, this number could be set manually based on your own device.
 
-### 3. Installation of standalone version on **Windows**
+### 3. Compilation on **Windows**
+#### 3.1 Dependencies
+* [Microsoft Visual C++ Build Tools](https://visualstudio.microsoft.com/zh-hans/) 
 
-      > cmake/windows/build.bat
-
-**Note:**
-* Make sure that **Microsoft Visual C++ Build Tools** has been installed. If its version == 2022, you should also install the following package:
+* [Ninja](https://ninja-build.org/) (version >= 1.0.0)
   
-      > conda install vs2022-win_64 -c conda-forge
+      conda install ninja -c conda-forge
 
-* Compilation on Windows also depends on Ninja, so it should also be installed:
+**Note**: Please download and install **Microsoft Visual C++ Build Tools** manually. 
+* If its version == 2022, install the following package into **Conda**
   
-      > conda install ninja -c conda-forge
+      conda install vs2022-win_64 -c conda-forge
 
-* If **trids** could not be ran normally, please check if adding **PATH** to environment variables:
+#### 3.2 Compilation & Installation 
 
-      > set PATH=%CONDA_PREFIX%\Lib\site-packages\torch\lib;%CONDA_PREFIX%\Library\bin;%CONDA_PREFIX%\Library\lib;%PATH%
+      cmake/windows/build.bat
 
-### 4. Installation of **PyTrids** for Python
+Then, adding **PATH** to environment variables:
 
-      $ python setup.py install
+      set PATH=%CONDA_PREFIX%\Lib\site-packages\torch\lib;%CONDA_PREFIX%\Library\bin;%CONDA_PREFIX%\Library\lib;%PATH%
+
+### 4. Installing **PyTrids** for Python
+
+      python setup.py install
 
 or 
 
-      $ pip install -e . --no-build-isolation
+      pip install -e . --no-build-isolation
 
-**Note:**
-* If you want to uninstall this package, run:
+**Note:** If you want to uninstall this package, run:
 
-      $ pip uninstall trids
+      pip uninstall trids
 
-* Generally, the library and execution file have be precompiled in **bin/**. If compatibility issues occurs, delete the folder **bin/** at first.
-
-      $ rm -rf bin/                       # on Linux
-
-      > rmdir /s /q bin/                  # on Windows
-
-### 5. Installation of PyMOL plugin (After Step 4)
+### 5. Installing of PyMOL plugin (After Step 4)
 First of all, make sure that **PyTrids** and **PyMOL** has been installed in the same **Conda** environment
+      
+      conda install pymol-open-source -c conda-forge
 
 **Method 1**: (Recommended)
-> * Run PyMOL
-> * Menu: Plugin -> Plugin Manager -> Install New Plugin -> Choose File ...
-> * Choose: ~/plugins/pymol/trids_gui.py
-> * Restart PyMOL
-> * If installation is complete, the menu in plugin has "TRIDS Settings"
+* Run PyMOL
+* Menu: Plugin -> Plugin Manager -> Install New Plugin -> Choose File ...
+* Choose: ~/plugins/pymol/trids_gui.py
+* Restart PyMOL
+* If installation is complete, the menu in plugin has "TRIDS Settings"
 
 **Method 2**: (Manual)
-Copy trids_gui.py into the startup folder of PyMOL:
-  
-      $ cp plugins/pymol/trids_gui.py ~/.pymol/startup/                               # on Linux
+Copy trids_gui.py into the startup folder of PyMOL.
+On Linux:
+      cp plugins/pymol/trids_gui.py ~/.pymol/startup/
 
-      > copy plugins/pymol/trids_gui.py C:\Users\<Username>\.pymol\startup\           # on Windows
+or on windows:
+
+      copy plugins/pymol/trids_gui.py C:\Users\<Username>\.pymol\startup\
 
 **Method 3**: (Temporary) 
 Run the following code in the command line of PyMOL
 
-      PyMOL> run ~/plugins/pymol/trids_gui.py
+      run ~/plugins/pymol/trids_gui.py
 
 
 ### 6. Installation Check
-Check main program in termainal:
+#### 6.1 Check main program with CLI:
 
-      $ trids -h
+      trids -h
 
-Check **PyTrids** if installed:
+#### 6.2 Check **PyTrids**
 
-      $ python tests/test_trids.py -g 0               # CUDA
-      $ python tests/test_trids.py -g -1              # CPU
+ on GPU:
 
-Check **PyMOL** plugin if **PyMOL** and **PyTrids** is installed:
+      python tests/test_trids.py -g 0
 
-      $ python tests/test_pymol.py
+ on CPU:
+
+      python tests/test_trids.py -g -1
+
+#### Check **PyMOL** plugin
+
+      python tests/test_pymol.py
 
 
 **Note:** 
-* If you could run **trids** in terminal normally, it has been installed successfully.
+* If usage instruction outputs after running **trids -h**, it has been installed successfully.
 * If python outputs the correct information, installation has been done. Here, **-g** denotes the CUDA id.
 
 ## Usage
 ### 1. Usage of standalone version: 
 
-    $ trids -r <receptor_path> -l <ligand_path> [-k <refrence_ligand_path>] [OPTIONS]
+    trids -r <receptor_path> -l <ligand_path> [-k <refrence_ligand_path>] [OPTIONS]
 
 Options:
 
     -h,--help                             Print this help message and exit
-  
     -r,--receptor <pdb>                   Rigid part of the receptor [REQUIRED]
-  
     -l,--ligand <smi, mol2, sdf, pdb>     Ligand [REQUIRED]
-  
     -k,--pocket <pt, pth, mol2, sdf, pdb> Reference profile for Binding site identification
-  
     --hts                                 High throughput screening mode with higher virtual screening accuracy but lower binding pose accuracy
-  
     -o,--out <string>                     File path for outputing docking results, the format of molecules is based on file extension
-  
     -e,--stream <uint> [256]              Max number of sampling for Monte carlo research
-  
     -d,--depth <uint> [32]                Max depths for Monte carlo research
-  
     -t,--top <uint> [1]                   Record Number of N best conformers in output
-  
     --seed <uint>                         User defined random seed
-  
     -c,--cpu <uint> [1]                   Number of CPU cores
-  
     -g,--cuda <int> [0]                   Index of Nvidia CUDA Device. If set to -1, no CUDA device will be used
-  
     --score_only                          Only calculating the score of given conformation without sampling
-
     -v,--verbose <0,1,2> [0]              Verbose mode, print more information, 0: Error, 1: Warning, 2: Info
-  
     --config                              Read an ini file
 
 **Note:** 
@@ -260,7 +238,7 @@ To make sure the correct usage of PyMOL plugin, users should run this program wi
    
 #### 2.1. If you want to predict the binding sites, run:
 
-      PyMOL> trisite receptor [, reference [, cutoff [, show ]]]
+      trisite receptor [, reference [, cutoff [, show ]]]
 
 Options:
 
@@ -271,7 +249,7 @@ Options:
 
 #### 2.2. If you want to calulate the docking score of the ligand with the given binding site, run:
 
-    PyMOL> triscore pocket, ligand [, use_vina ]
+    triscore pocket, ligand [, use_vina ]
 
 Options:
 
@@ -281,7 +259,7 @@ Options:
 
 #### 2.3. If you want to dock the ligand to the given binding site, run:
 
-      PyMOL> trids pocket, ligand [, top_n [, streams [, depth [, use_vina [, name ]]]]]
+      trids pocket, ligand [, top_n [, streams [, depth [, use_vina [, name ]]]]]
 
 Options:
 
@@ -295,7 +273,7 @@ Options:
 
 #### 2.4 If you want to get/set the runing device, run:
 
-      PyMOL> tridev [dev, num]
+      tridev [dev, num]
 
 Options:
 

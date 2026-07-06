@@ -43,7 +43,7 @@ Installation:
     Method 2: (Manual)
     Copy trids_pymol.py into the startup folder of PyMOL:
     
-        $ cp plugins/trids_pymol.py ~/.pymol/startup/                               # on  Linux
+        $ cp plugins/trids_pymol.py ~/.pymol/startup/                               # on Linux
 
     or
 
@@ -56,9 +56,9 @@ Installation:
 
 Usage (PyMOL command line):
     device [dtype [, num]]       # set or show compute device
-    trids pocket, ligand [, options...]
-    triscore pocket, ligand [, options...]
-    trisite receptor [, reference [, options...]]
+    trids pocket_sel, ligand_sel [, options...]
+    triscore pocket_sel, ligand_sel [, options...]
+    trisite receptor_sel [, reference_sel [, options...]]
     trinfo
 
 Usage (object panel A menu):
@@ -879,7 +879,7 @@ Usage:
 Options:
 
     pocket      = str: trisite pocket object (site_ref_* or site_pred_*)
-    ligand      = str: PyMOL selection as the ligand
+    ligand      = str: PyMOL selection or file path (sdf/mol2/pdb) for the ligand
     top_n       = int: number of top conformations to return (default: 8)
     streams     = int: number of parallel sampling tasks (default: 1024)
     depth       = int: Monte Carlo search depth (default: 8)
@@ -958,7 +958,7 @@ Usage:
 Options:
 
     pocket        = str: trisite pocket object (site_ref_* or site_pred_*)
-    ligand        = str: PyMOL selection as the ligand
+    ligand        = str: PyMOL selection or file path
     use_vina      = 0/1: use Vina scoring (default: 0)
 
 Examples:
@@ -1210,8 +1210,8 @@ Usage:
 
 Options:
 
-    receptor  = str: PyMOL selection as the receptor
-    reference = str: (optional) PyMOL selection as the reference ligand
+    receptor  = str: PyMOL selection or PDB file path
+    reference = str: (optional) reference ligand selection or file path
     cutoff    = float: pocket radius in Angstrom (default: 8.0)
     show      = 0/1: auto-visualize pockets in PyMOL (default: 1)
 

@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.22)
+cmake_minimum_required(VERSION 3.18)
 
 get_filename_component(TRIDS_ROOT "${CMAKE_CURRENT_LIST_DIR}/../.." ABSOLUTE)
 get_filename_component(TRIDS_WINDOWS "${CMAKE_CURRENT_LIST_DIR}" ABSOLUTE)
@@ -13,8 +13,22 @@ endif()
 set(TRIDS_CONDA "$ENV{CONDA_PREFIX}")
 file(TO_CMAKE_PATH "${TRIDS_CONDA}" TRIDS_CONDA)
 
-set(CMAKE_CUDA_COMPILER "${TRIDS_CONDA}/Library/bin/nvcc.exe" CACHE FILEPATH "" FORCE)
+# CUDA layout differs between conda packages:
+#   CUDA 12.x: $CONDA_PREFIX/Library/{bin,include,lib}
+#   CUDA 11.x: $CONDA_PREFIX/{bin,include,lib}
+if(EXISTS "${TRIDS_CONDA}/Library/bin/nvcc.exe")
+    set(CMAKE_CUDA_COMPILER "${TRIDS_CONDA}/Library/bin/nvcc.exe")
+    set(CUDAToolkit_ROOT "${TRIDS_CONDA}/Library")
+elseif(EXISTS "${TRIDS_CONDA}/bin/nvcc.exe")
+    set(CMAKE_CUDA_COMPILER "${TRIDS_CONDA}/bin/nvcc.exe")
+    set(CUDAToolkit_ROOT "${TRIDS_CONDA}")
+else()
+    message(FATAL_ERROR "nvcc.exe not found. Install the cuda toolkit into the conda env.")
+endif()
+
 set(CMAKE_CUDA_COMPILER_LAUNCHER "${TRIDS_CONDA}/python.exe" "${TRIDS_WINDOWS}/trids_nvcc_driver.py")
+message(STATUS "CUDA root: ${CUDAToolkit_ROOT}")
+message(STATUS "CUDA compiler: ${CMAKE_CUDA_COMPILER}")
 
 find_program(TRIDS_CL NAMES cl cl.exe)
 if(NOT TRIDS_CL)
@@ -43,21 +57,21 @@ set(CMAKE_CUDA_HOST_COMPILER "${CMAKE_CXX_COMPILER}" CACHE FILEPATH "" FORCE)
 get_filename_component(TRIDS_CL_DIR "${CMAKE_CXX_COMPILER}" DIRECTORY)
 set(ENV{PATH} "${TRIDS_CL_DIR};$ENV{PATH}")
 
-if(NOT CMAKE_CUDA_ARCHITECTURES)
-    set(CMAKE_CUDA_ARCHITECTURES "86" CACHE STRING "" FORCE)
-endif()
-if(NOT CMAKE_BUILD_TYPE)
-    set(CMAKE_BUILD_TYPE Release CACHE STRING "" FORCE)
-endif()
 set(CMAKE_CUDA_COMPILE_OPTIONS_MSVC_DEBUG_INFORMATION_FORMAT "")
 set(CMAKE_MSVC_DEBUG_INFORMATION_FORMAT "")
 
-project(trids LANGUAGES CXX CUDA)
+# CUDA 11.x + VS 2022 17.11+ (MSVC 14.44): nvcc and MSVC STL both need escape hatches.
+# Must be set before project() so CMake's CUDA compiler-ID probe sees the flags.
+if(CUDAToolkit_ROOT STREQUAL TRIDS_CONDA)
+    set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -allow-unsupported-compiler -D_ALLOW_COMPILER_AND_STL_VERSION_MISMATCH")
+endif()
 
+project(trids LANGUAGES CXX CUDA)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CUDA_STANDARD 17)
 include(GNUInstallDirs)
-
+set(CMAKE_BUILD_TYPE Release)
+set(CMAKE_CUDA_ARCHITECTURES all)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /O2 /fp:fast /EHsc /bigobj")
 set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} --use_fast_math -O3 -lcudadevrt -lcufft --expt-relaxed-constexpr")
 add_compile_definitions(
@@ -69,11 +83,11 @@ set(TORCH_CMAKE_PATH "${TRIDS_CONDA}/Lib/site-packages/torch/share/cmake")
 set(TORCH_LIB_PATH "${TRIDS_CONDA}/Lib/site-packages/torch/lib")
 set(nvtx3_dir "${TRIDS_CONDA}/Lib/site-packages/nvidia/nvtx/include")
 set(CUDNN_BASE_DIR "${TRIDS_CONDA}/Lib/site-packages/nvidia/cudnn")
-list(PREPEND CMAKE_PREFIX_PATH "${TRIDS_CONDA}/Library" "${TRIDS_CONDA}/Library/lib/cmake" "${TORCH_CMAKE_PATH}")
+list(PREPEND CMAKE_PREFIX_PATH "${TRIDS_CONDA}" "${CUDAToolkit_ROOT}" "${TRIDS_CONDA}/Library/lib/cmake" "${TORCH_CMAKE_PATH}")
 
 if(EXISTS "${nvtx3_dir}/nvtx3")
     set(USE_SYSTEM_NVTX ON CACHE BOOL "" FORCE)
-    set(CUDA_INCLUDE_DIRS "${TRIDS_CONDA}/Library/include" "${nvtx3_dir}")
+    set(CUDA_INCLUDE_DIRS "${CUDAToolkit_ROOT}/include" "${nvtx3_dir}")
 endif()
 
 function(trids_make_import_lib _name _out_var)
@@ -146,8 +160,8 @@ set(OpenBabel3_LIBRARIES openbabel)
 
 if(EXISTS "${CUDAToolkit_INCLUDE_DIRS}/../targets/x64")
     include_directories(BEFORE SYSTEM "${CUDAToolkit_INCLUDE_DIRS}/../targets/x64")
-elseif(EXISTS "${TRIDS_CONDA}/Library/include/targets/x64")
-    include_directories(BEFORE SYSTEM "${TRIDS_CONDA}/Library/include/targets/x64")
+elseif(EXISTS "${CUDAToolkit_ROOT}/include/targets/x64")
+    include_directories(BEFORE SYSTEM "${CUDAToolkit_ROOT}/include/targets/x64")
 endif()
 
 if(NOT TARGET CUDA::nvToolsExt AND EXISTS "${TORCH_LIB_PATH}/nvToolsExt64_1.dll")
