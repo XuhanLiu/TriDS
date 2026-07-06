@@ -52,8 +52,7 @@ After creation, activating the Conda environment **trids**:
 
       conda activate trids
 
-#### 1.1 Dependencies required at runtime
-After the environment being created, these required packages at runtime have been installed automatically. Usually, you had better to check if they has been installed:
+Usually, you had better to check if the following required packages have been installed:
 * [PyTorch](https://www.pytorch.org) (version >= 2.6)
 
 * [OpenBabel](https://openbabel.org) (version >= 3.1.1)
@@ -62,7 +61,7 @@ After the environment being created, these required packages at runtime have bee
 
 * [spdlog](https://github.com/gabime/spdlog) (version >= 1.0)
 
-* [pybind11](https://github.com/pybind/pybind11) (version >= 2.11, Optional)
+* [pybind11](https://github.com/pybind/pybind11) (version >= 2.11)
 **Note**: Pybind11 is required only when you want to install **PyTrids** for Python.
 
 ### 2. Installing **PyTrids** for Python
@@ -105,11 +104,11 @@ Run the following code in the command line of PyMOL
 
 
 ### 4. Installation Check
-#### 4.1 Check main program with CLI:
+#### 4.1. Check main program with CLI:
 
       trids -h
 
-#### 4.2 Check **PyTrids**
+#### 4.2. Check **PyTrids**
 
  on GPU:
 
@@ -119,7 +118,7 @@ Run the following code in the command line of PyMOL
 
       python tests/test_trids.py -g -1
 
-#### Check **PyMOL** plugin
+#### 4.3. Check **PyMOL** plugin
 
       python tests/test_pymol.py
 
@@ -148,13 +147,13 @@ The following packages need to be installed manually **only if** this project is
 **Note**: The version of PyTorch should be consistent with the version of CUDA. 
 
 ### 2. **Linux**
-#### 2.1 Specific dependencies
+#### 2.1. Specific dependencies
 If installed CUDA version == 11.8, and default GCC version >= 12, the following package must be installed as C++ compiler.
 * [GCC](https://gcc.gnu.org/) (version <= 11.2, Optional). 
 
       conda install gcc_linux-64==11.2 gxx_linux-64==11.2
 
-#### 2.2 Compilation & Installation 
+#### 2.2. Compilation & Installation 
 * Creating an empty folder for compilation:
 
       mkdir build && cd build
@@ -181,7 +180,7 @@ If installed CUDA version == 11.8, and default GCC version >= 12, the following 
 * **-j 8** means that the code will be compiled with **eight** CPU cores, this number could be set manually based on your own device.
 
 ### 3. **Windows**
-#### 3.1 Specific dependencies
+#### 3.1. Specific dependencies
 * [Microsoft Visual C++ Build Tools](https://visualstudio.microsoft.com/zh-hans/) 
 
 * [Ninja](https://ninja-build.org/) (version >= 1.0.0)
@@ -193,7 +192,7 @@ If installed CUDA version == 11.8, and default GCC version >= 12, the following 
   
       conda install vs2022-win_64 -c conda-forge
 
-#### 3.2 Compilation & Installation 
+#### 3.2. Compilation & Installation 
 
       cmake/windows/build.bat
 
@@ -272,7 +271,7 @@ Options:
       use_vina    = 0/1:      use Vina scoring function instead of TRI (default: 0)
       name        = str:      base name for loaded result objects (default: trids_dock)
 
-#### 2.4 If you want to get/set the runing device, run:
+#### 2.4. If you want to get/set the runing device, run:
 
       tridev [dev, num]
 
