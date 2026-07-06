@@ -125,7 +125,7 @@ If installed CUDA version == 11.8, and default GCC version >= 12, the following 
       conda install ninja -c conda-forge
 
 **Note**: Please download and install **Microsoft Visual C++ Build Tools** manually. 
-* If its version == 2022, install the following package into **Conda**
+* The recommend version == 2017 and no more higher than 2022. If its version == 2022, install the following package into **Conda**
   
       conda install vs2022-win_64 -c conda-forge
 
