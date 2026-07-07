@@ -90,10 +90,12 @@ First of all, make sure that **PyTrids** and **PyMOL** has been installed in the
 
 **Method 2**: (Manual)
 Copy trids_gui.py into the startup folder of PyMOL.
+
 On Linux:
+
       cp plugins/pymol/trids_gui.py ~/.pymol/startup/
 
-or on windows:
+on Windows:
 
       copy plugins/pymol/trids_gui.py C:\Users\<Username>\.pymol\startup\
 
@@ -129,7 +131,7 @@ Run the following code in the command line of PyMOL
       export PATH=$PATH:<path/for/trids>/bin
       export LD_LIBRARY_PATH=$CONDA_PREFIX/lib/python3.12/site-packages/torch/lib:$CONDA_PREFIX/lib:$LD_LIBRARY_PATH
       
-  or on Windows:
+  on Windows:
       
       set PATH=%CONDA_PREFIX%\Lib\site-packages\torch\lib;%CONDA_PREFIX%\Library\bin;%CONDA_PREFIX%\Library\lib;%PATH%
 
