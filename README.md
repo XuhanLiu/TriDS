@@ -122,9 +122,17 @@ Run the following code in the command line of PyMOL
 
       python tests/test_pymol.py
 
-
 **Note:** 
-* If usage instruction outputs after running **trids -h**, it has been installed successfully.
+* If usage instruction outputs after running **trids -h**, it has been installed successfully. Otherwise, you have to set some environmental variable manually,
+  on Linux:
+      
+      export PATH=$PATH:<path/for/trids>/bin
+      export LD_LIBRARY_PATH=$CONDA_PREFIX/lib/python3.12/site-packages/torch/lib:$CONDA_PREFIX/lib:$LD_LIBRARY_PATH
+      
+  or on Windows:
+      
+      set PATH=%CONDA_PREFIX%\Lib\site-packages\torch\lib;%CONDA_PREFIX%\Library\bin;%CONDA_PREFIX%\Library\lib;%PATH%
+
 * If python outputs the correct information, installation has been done. Here, **-g** denotes the CUDA id.
 
 ## Compilation (Optional)
@@ -162,17 +170,9 @@ If installed CUDA version == 11.8, and default GCC version >= 12, the following 
 
       cmake ../cmake/linux -DCMAKE_INSTALL_PREFIX=<path/for/trids> -DBUILD_PYTHON=ON
 
-* Compilation & Istallation
+* Compilation & Installation
 
       make install -j 8
-
-* Add **PATH** to environmental variables:
-
-      export PATH=$PATH:<path/for/trids>/bin
-
-* Add **LD_LIBRARY_PATH** to environmental variables:
-
-      export LD_LIBRARY_PATH=$CONDA_PREFIX/lib/python3.12/site-packages/torch/lib:$CONDA_PREFIX/lib:$LD_LIBRARY_PATH
 
 **Note:** 
 * **-DBUILD_PYTHON** for **cmake** should be **ON**, if the **PyTrids** will be installed later manually; default is **OFF**;
@@ -195,10 +195,6 @@ If installed CUDA version == 11.8, and default GCC version >= 12, the following 
 #### 3.2. Compilation & Installation 
 
       cmake/windows/build.bat
-
-Then, adding **PATH** to environment variables:
-
-      set PATH=%CONDA_PREFIX%\Lib\site-packages\torch\lib;%CONDA_PREFIX%\Library\bin;%CONDA_PREFIX%\Library\lib;%PATH%
 
 ## Usage
 ### 1. Usage of standalone version: 
